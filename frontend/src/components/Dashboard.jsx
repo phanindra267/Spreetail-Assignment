@@ -4,6 +4,8 @@ import axios from 'axios';
 
 const Dashboard = () => {
   const [file, setFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -11,10 +13,13 @@ const Dashboard = () => {
     const formData = new FormData();
     formData.append('csv', file);
     try {
+      setLoading(true);
       const res = await axios.post('/api/import', formData);
-      console.log('Import result:', res.data);
+      setImportResult(res.data);
+      setLoading(false);
     } catch (err) {
       console.error(err);
+      setLoading(false);
     }
   };
 
@@ -34,11 +39,36 @@ const Dashboard = () => {
           </div>
           <button
             type="submit"
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            disabled={loading}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
           >
-            Upload CSV
+            {loading ? 'Uploading...' : 'Upload CSV'}
           </button>
         </form>
+
+        {importResult && (
+          <div className="mt-6 border-t pt-4">
+            <h3 className="text-lg font-semibold mb-2">Import Result</h3>
+            <p>Total Rows Processed: {importResult.totalRows}</p>
+            <p>Anomalies Detected: {importResult.anomalies.length}</p>
+
+            {importResult.anomalies.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-medium mb-2">Anomalies:</h4>
+                <ul className="space-y-2">
+                  {importResult.anomalies.map((anomaly, i) => (
+                    <li key={i} className="p-2 bg-yellow-50 border border-yellow-200 rounded">
+                      <strong>Row {anomaly.rowNumber}:</strong> {anomaly.description}
+                      <span className="ml-2 text-sm text-gray-600">
+                        (Action: {anomaly.action})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
